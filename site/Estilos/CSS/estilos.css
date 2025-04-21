@@ -1,0 +1,65 @@
+ /*Configurações do título da página inicial do site = header
+ */
+h1{text-align: center}
+h1{font-weight: bold;}
+h1{color:#1F00F5; front-size: 70px;}
+h1{	padding: 60px;}
+	p{color:#00FF00; front-size:50px;}
+	h1 {
+  background-color: white;
+
+}
+/*Configurações cor de fundo da página inicial do site
+ */
+HTML
+body {
+   background-color: #98EBDC;
+}
+.highlight-box {
+   background-color: yellow;
+}
+/* Comandos (tags) para definição de linha horizontal, para separa o título dos deemais conteúdos da página, como o menu com os botões
+ */
+hr {
+	border: 0;
+	border-top: 1px solid #094CFA;
+}
+
+/*Comandos para criação do menu = nav
+ */
+ul li a {
+   display: block;
+   text-decoration: none;
+   font-size: 20px;
+   color: white;
+   background: #EB6F14;
+   padding: 5px;
+   border: 1px solid #ccc;
+   width: 220px;
+   height: 50px;
+   position: sticky;
+}
+
+/*Comandos para criação de efeito ao clicar no menu = nav
+ */
+ul li a:hover{
+text-decoration:underline;
+font-weight: bold;
+background: #ccc;
+}
+
+/*Comandos para criação da apresantação do site =  section
+ */
+.outer {
+  border: 2px solid black;
+  padding: 10px;
+  width:  600px;
+  height: 35px;
+  font-size: 20px;
+  background-color: white;
+  color: black;
+  position: relative;
+  top:70px; left: 500px;
+}
+
+
