@@ -1,5 +1,6 @@
  /*Configurações do título da página inicial do site = header
  */
+header {
 h1{text-align: center}
 h1{font-weight: bold;}
 h1{color:#1F00F5; front-size: 70px;}
@@ -7,8 +8,9 @@ h1{	padding: 60px;}
 	p{color:#00FF00; front-size:50px;}
 	h1 {
   background-color: white;
-
+	}
 }
+
 /*Configurações cor de fundo da página inicial do site
  */
 HTML
@@ -27,6 +29,7 @@ hr {
 
 /*Comandos para criação do menu = nav
  */
+ nav {
 ul li a {
    display: block;
    text-decoration: none;
@@ -47,9 +50,12 @@ text-decoration:underline;
 font-weight: bold;
 background: #ccc;
 }
+ }
 
-/*Comandos para criação da apresantação do site =  section
+/*Comandos para criação da apresantação do site =  main
  */
+  main {
+
 .outer {
   border: 2px solid black;
   padding: 10px;
@@ -61,5 +67,12 @@ background: #ccc;
   position: relative;
   top:70px; left: 500px;
 }
+  }
 
+footer {
+            background-color: blue;
+            color: white;
+            text-align: center;
+            padding: 10px;
+        }
 

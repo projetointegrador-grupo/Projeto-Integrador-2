@@ -2,62 +2,67 @@
 <html lang="pt-BR">
 <head>
 <meta charset="utf-8">
-<link rel="stylesheet" type="text/css" href="estilos.css" />
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 
+<link rel="stylesheet" type="text/css" href="estilos.css" />
 <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
 </head>
 <body>
+ <div class="container">
+ <div class="row">
+      <div class="col s1"></div>
+      <div class="col s1"></div>
+      <div class="col s1"></div>
+      <div class="col s1"></div>
+      <div class="col s1"></div>
+      <div class="col s1"></div>
+      <div class="col s1"></div>
+      <div class="col s1"></div>
+      <div class="col s1"></div>
+      <div class="col s1"></div>
+      <div class="col s1"></div>
+      <div class="col s1"></div>
+    </div>
+ <header>
 <h1>Sala de Leitura Online da Escola Estadual Professor Antônio de Pádua Prado</h1>
 <hr>
-<div class="outer">Bem vindos ao site de catalogação e registros da
+ </header>
+ <main>
+ <article>
+<p>Bem vindos ao site de catalogação e registros da
 Sala de Leitura da Escola Estadual Professor Antônio de Pádua Prado!
-
+ Utilize o menu lateral, para acessar a opção deseja. <p>
+</article>
+</main>
 </div>
 
 <nav>
   <ul class="menu">
-		<li><a href="#">Catalogação do Acervo</a></li>
-		<li><a href="#">Consulta do Acervo</a></li>
-		<li><a href="#">Registro de empréstimo</a></li>
-		<li><a href="#">Consulta de devolução</a></li>
+		<li><a href="catalogacao.html">Catalogação do Acervo</a></li>
+		<li><a href="consulta.html">Consulta do Acervo</a></li>
+		<li><a href="emprestimo.html">Registro de Empréstimo</a></li>
+		<li><a href="devolucao.html">Consulta de Devolução</a></li>
 </ul>
 </nav>
 
-<!doctype html>
-<html lang="en">
-  <head>
-    <!-- Required meta tags -->
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-
-    <!-- Bootstrap CSS -->
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
-
-    <title>{% block title %} {% endblock %}</title>
-  </head>
-  <body>
-    <nav class="navbar navbar-expand-md navbar-light bg-light">
-        <a class="navbar-brand" href="{{ url_for('index')}}">FlaskBlog</a>
-        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-            <span class="navbar-toggler-icon"></span>
-        </button>
-        <div class="collapse navbar-collapse" id="navbarNav">
-            <ul class="navbar-nav">
-            <li class="nav-item active">
-                <a class="nav-link" href="#">About</a>
-            </li>
-            </ul>
-        </div>
-    </nav>
-    <div class="container">
-        {% block content %} {% endblock %}
-    </div>
-
-    <!-- Optional JavaScript -->
-    <!-- jQuery first, then Popper.js, then Bootstrap JS -->
     <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
-  </body>
+
+  <footer>
+     <p>&copy; 2025, Sala de Leitura da Escola Estadual Professor Antônio de Pádua Prado</p>
+  </footer>
+
+   <div class="row">
+
+      <div class="col s3">
+      </div>
+
+      <div class="col s9">
+
+      </div>
+
+    </div>
+ </div>
 </body>
 </html>
