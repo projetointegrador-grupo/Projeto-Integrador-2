@@ -1,14 +1,30 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
+<<!DOCTYPE html>
+<html lang="pt-br">
 <head>
-    <title>Catalogação do Acervo</title>
-    <meta charset="utf-8">
-    <link rel="stylesheet" type="text/css" href="catolagação.css" />
+    <meta charset="UTF-8">
+    <title>Consulta do Acervo</title>
+    <link rel="stylesheet" href="consulta.css">
 </head>
 <body>
+
+<button id="btnCatalogar">Consultar</button>
+
+    <div id="modal" class="modal">
+        <div class="modal-conteudo">
+            <span class="fechar-modal">&times;</span>
+            <p>A obra pesquisada está localizada:</p>
+        </div>
+    </div>
+
+    <script src="catalogacao.js"></script>
+
+
+
     <header>
-        <h1>Catalogação do Acervo</h1>
-		<nav>
+        <h1>Consulta do Acervo</h1>
+    </header>
+
+    <nav>
         <ul>
             <li><a href="base v2.html">Página Inicial</a></li>
             <li><a href="catalogacao.html">Catalogação do Acervo</a></li>
@@ -17,11 +33,10 @@
 		    <li><a href="devolucao.html">Consulta de Devolução</a></li>
         </ul>
     </nav>
-    </header>
 
-    <section id="catalogar">
-
-        <form id="formulárioobra">
+    <main>
+        <section id="consulta">
+            <form id="formulárioobra">
             <label for="titulo">Título da obra:</label>
             <input type="text" id="titulo" name="titulo"><br><br>
 
@@ -34,11 +49,10 @@
 			<label for="autor">ISBN:</label>
             <input type="text" id="isbn" name="isbn"><br><br>
 
-            <button type="submit">Catalogar</button>
-		 </form>
+            <button type="submit">Consulta</button>
+        </form>
 
     </main>
-</body>
-</html>
+
 </body>
 </html>

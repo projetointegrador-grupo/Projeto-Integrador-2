@@ -6,6 +6,18 @@
     <link rel="stylesheet" type="text/css" href="catolagação.css" />
 </head>
 <body>
+<button id="btnCatalogar">Catalogar</button>
+
+    <div id="modal" class="modal">
+        <div class="modal-conteudo">
+            <span class="fechar-modal">&times;</span>
+            <p>Catalogação realizada!</p>
+        </div>
+    </div>
+
+    <script src="catalogacao.js"></script>
+
+
     <header>
         <h1>Catalogação do Acervo</h1>
 		<nav>
@@ -34,8 +46,11 @@
 			<label for="autor">ISBN:</label>
             <input type="text" id="isbn" name="isbn"><br><br>
 
-            <button type="submit">Catalogar</button>
+			<button type="submit">Catalogar</button>
+
 		 </form>
+
+
 
     </main>
 </body>

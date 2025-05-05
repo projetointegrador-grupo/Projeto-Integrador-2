@@ -6,6 +6,18 @@
     <link rel="stylesheet" type="text/css" href="emprestimo.css" />
 </head>
 <body>
+
+<button id="btnCatalogar">Registrar</button>
+
+    <div id="modal" class="modal">
+        <div class="modal-conteudo">
+            <span class="fechar-modal">&times;</span>
+            <p>Registro realizado!</p>
+        </div>
+    </div>
+
+    <script src="emprestimo.js"></script>
+
     <header>
         <h1>Registro de Empréstimo</h1>
 		<nav>
@@ -32,6 +44,9 @@
             <input type="text" id="ano" name="ano"><br><br>
 
 			<label for="autor">ISBN:</label>
+            <input type="text" id="isbn" name="isbn"><br><br>
+
+			<label for="autor">Data do empréstimo:</label>
             <input type="text" id="isbn" name="isbn"><br><br>
 
             <button type="submit">Registrar</button>
