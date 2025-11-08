@@ -6,7 +6,7 @@
 
 body {
     font-family: arial;
-    background-color: #4F4F4F;
+    background-color: #B5B5B5;
     margin: 20px;
     text-align: center;
 }
@@ -88,7 +88,7 @@ document.addEventListener('DOMContentLoaded', function() {
         obra[chave] = valor;
     });
 
-    console.log('Dados a serem enviados:', obra);
+    console.log('Informações para envio:', obra);
 
     const urlAppsScript = 'https://script.google.com/macros/s/AKfycbwbIdawNKNNB216AwBf9TaDf_5pdjOrMS80KFWB1jjfqTvgkH3p6-xQRFs--jXEp14C5A/exec'; 
 
@@ -102,16 +102,16 @@ document.addEventListener('DOMContentLoaded', function() {
     })
     .then(data => {
         if (data.status === 'sucesso') {
-            console.log('Resposta do Servidor:', data);
+            console.log('Resp server:', data);
             modal.style.display = 'block'; 
             formulario.reset(); 
         } else {
-            throw new Error('Erro no Apps Script: ' + data.mensagem);
+            throw new Error('Apps Script error: ' + data.mensagem);
         }
     })
     .catch(error => {
-        console.error('Falha na catalogação:', error);
-        alert('Ocorreu um erro na catalogação. Verifique o console.');
+        console.error('Falha:', error);
+        alert('Erro na catalogação.');
     });
 
 }); 
@@ -128,6 +128,8 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 </script>
+
+<script src="https://cdn.jsdelivr.net/npm/sienna-accessibility@latest/dist/sienna-accessibility.umd.js" defer></script>
  
     <section id="catalogar">
 
@@ -143,12 +145,25 @@ document.addEventListener('DOMContentLoaded', function() {
 
 			<label for="autor">ISBN:</label>
             <input type="text" id="isbn" name="isbn"><br><br>
+			
 
 			<button type="submit" class="btnCatalogar-submit">Catalogar</button>
 
 		 </form>
 
 </section>
+
+ <div vw class="enabled">
+    <div vw-access-button class="active"></div>
+    <div vw-plugin-wrapper>
+      <div class="vw-plugin-top-wrapper"></div>
+    </div>
+  </div>
+  <script src="https://vlibras.gov.br/app/vlibras-plugin.js"></script>
+  <script>
+    new window.VLibras.Widget('https://vlibras.gov.br/app');
+  </script>
+
 </body>
 </html>
 
