@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="utf-8">
+    <style> 
+
+body {
+    font-family: arial;
+    background-color: #B5B5B5;
+    margin: 20px;
+    text-align: center;
+}
+
+#btnCatalogar-submit {
+    position: fixed;  
+    bottom: 20px;     
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0,0,0,0.4);
+}
+
+.modal-conteudo {
+    position: relative;
+    background-color: #fefefe;
+    margin: 15% auto;
+    padding: 20px;
+    border: 1px solid #888;
+    width: 80%;
+}
+
+.fechar-modal {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+}
+
+.fechar-modal:hover,
+.fechar-modal:focus {
+    color: black;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+form {
+    margin-bottom: 5px;
+    font-weight: bold;
+    padding: 8px;
+    text-align: center;
+	font-weight: bold;
+
+</style>
+</head>
+<body>
+
+    <div id="modal" class="modal">
+        <div class="modal-conteudo">
+            <span class="fechar-modal">&times;</span>
+            <p>Registro realizado!</p>
+        </div>
+    </div>
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="utf-8">
+    <style> 
+
+body {
+    font-family: arial;
+    background-color: #B5B5B5;
+    margin: 20px;
+    text-align: center;
+}
+
+#btnCatalogar-submit {
+    position: fixed;  
+    bottom: 20px;     
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0,0,0,0.4);
+}
+
+.modal-conteudo {
+    position: relative;
+    background-color: #fefefe;
+    margin: 15% auto;
+    padding: 20px;
+    border: 1px solid #888;
+    width: 80%;
+}
+
+.fechar-modal {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+}
+
+.fechar-modal:hover,
+.fechar-modal:focus {
+    color: black;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+form {
+    margin-bottom: 5px;
+    font-weight: bold;
+    padding: 8px;
+    text-align: center;
+	font-weight: bold;
+
+</style>
+</head>
+<body>
+
+    <div id="modal" class="modal">
+        <div class="modal-conteudo">
+            <span class="fechar-modal">&times;</span>
+            <p>Registro realizado!</p>
+        </div>
+    </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    
+    const formulario = document.getElementById('formularioobra'); 
+    const modal = document.getElementById('modal');
+    const btnFecharModal = document.querySelector('.fechar-modal');
+	
+	formulario.addEventListener('submit', function(event) {
+	    event.preventDefault(); 
+
+    btnFecharModal.addEventListener('click', function() {
+        modal.style.display = 'none';
+    });
+
+    window.addEventListener('click', function(event) {
+        if (event.target === modal) {
+            modal.style.display = 'none';
+        }
+    });
+});
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/sienna-accessibility@latest/dist/sienna-accessibility.umd.js" defer></script>
+ 
+ 
+    <section id="consulta">
+
+        <form id="formulárioobra">
+            <label for="titulo">Título da obra:</label>
+            <input type="text" id="titulo" name="titulo"><br><br>
+
+            <label for="autor">Nome do autor:</label>
+            <input type="text" id="autor" name="autor"><br><br>
+
+			<label for="autor">Ano de publicação:</label>
+            <input type="text" id="ano" name="ano"><br><br>
+
+			<label for="autor">ISBN:</label>
+            <input type="text" id="isbn" name="isbn"><br><br>
+
+			
+			<button type="submit" class="btnCatalogar-submit">Registrar</button>
+
+		 </form>
+
+</section>
+
+ <div vw class="enabled">
+    <div vw-access-button class="active"></div>
+    <div vw-plugin-wrapper>
+      <div class="vw-plugin-top-wrapper"></div>
+    </div>
+  </div>
+  <script src="https://vlibras.gov.br/app/vlibras-plugin.js"></script>
+  <script>
+    new window.VLibras.Widget('https://vlibras.gov.br/app');
+  </script>
+
+</body>
+</html>
+
+
+   
+   
