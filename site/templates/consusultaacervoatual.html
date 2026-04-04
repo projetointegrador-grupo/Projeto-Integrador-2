@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <title>Consulta de Obras</title>
+  <style>
+    body { font-family: Arial, sans-serif; background:#B5B5B5; margin:20px; text-align:center; }
+    .container { max-width: 860px; margin: 0 auto; background:#fff; padding:20px; border-radius:12px; box-shadow:0 8px 24px rgba(0,0,0,.08); }
+    h2 { margin-top: 0; }
+    form { text-align:left; }
+    .row { display:flex; gap:12px; margin-bottom:12px; align-items:center; }
+    .row label { width:180px; text-align:right; font-weight:bold; }
+    .row input { flex:1; padding:8px; border:1px solid #ddd; border-radius:8px; }
+    .actions { display:flex; gap:12px; justify-content:center; margin-top:16px; }
+    button { padding:10px 16px; border:0; border-radius:8px; cursor:pointer; }
+    .btn-primary { background:#0d6efd; color:#fff; }
+    .btn-secondary { background:#6c757d; color:#fff; }
+    .status { margin-top:16px; font-weight:bold; }
+    table { width:100%; border-collapse:collapse; margin-top:16px; border-radius:8px; overflow:hidden; }
+    th, td { border:1px solid #eee; padding:10px; text-align:left; }
+    th { background:#f7f7f7; }
+    .hint { font-size:12px; color:#555; margin-top:6px; text-align:left; }
+    /* Modal */
+    .modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,.4); }
+    .modal-conteudo { background:#fff; width:min(520px, 90%); margin:15% auto; padding:20px; border-radius:8px; position:relative; }
+    .fechar-modal { position:absolute; right:14px; top:8px; cursor:pointer; font-size:20px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Consulta de obras</h2>
+    <form id="formConsultaObra" novalidate>
+      <div class="row">
+        <label for="titulo">Título da obra:</label>
+        <input type="text" id="titulo" name="titulo" placeholder="Ex.: Dom Casmurro" />
+      </div>
+      <div class="row">
+        <label for="autor">Nome do autor:</label>
+        <input type="text" id="autor" name="autor" placeholder="Ex.: Machado de Assis" />
+      </div>
+      <div class="row">
+        <label for="ano">Ano de publicação:</label>
+        <input type="text" id="ano" name="ano" placeholder="Ex.: 1899" />
+      </div>
+      <div class="row">
+        <label for="isbn">ISBN:</label>
+        <input type="text" id="isbn" name="isbn" placeholder="Ex.: 9781234567897" />
+      </div>
+      <p class="hint">A busca usa <strong>OU</strong> entre os campos informados (ex.: “título OU autor”).</p>
+      <div class="actions">
+        <button type="submit" class="btn-primary">Consultar</button>
+        <button type="button" id="btnLimpar" class="btn-secondary">Limpar</button>
+      </div>
+    </form>
+
+    <div id="status" class="status" aria-live="polite"></div>
+    <div id="resultado"></div>
+  </div>
+
+  <!-- Modal simples para mensagens -->
+  <div id="modal" class="modal" aria-hidden="true">
+    <div class="modal-conteudo" role="dialog" aria-modal="true" aria-labelledby="modal-titulo">
+      <span class="fechar-modal" title="Fechar">&times;</span>
+      <h3 id="modal-titulo">Aviso</h3>
+      <p id="modal-texto">Mensagem</p>
+    </div>
+  </div>
+
+  <!-- Acessibilidade (opcional) -->
+  <script src="https://cdn.jsdelivr.net/npm/sienna-accessibility@latest/dist/sienna-accessibility.umd.js" defer></script>
+  <div vw class="enabled">
+    <div vw-access-button class="active"></div>
+    <div vw-plugin-wrapper><div class="vw-plugin-top-wrapper"></div></div>
+  </div>
+  <script src="https://vlibras.gov.br/app/vlibras-plugin.js"></script>
+  <script> new window.VLibras.Widget('https://vlibras.gov.br/app'); </script>
+
+  <!-- Supabase JS -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    const SUPABASE_URL = 'https://wghuaeupfgszfmxdbvsz.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndnaHVhZXVwZmdzemZteGRidnN6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI2NDQxMTIsImV4cCI6MjA3ODIyMDExMn0.UZrPpVK_JlsvTJkXxlXfFOGyAWPKwUaSbMaF1oqkHx0';
+
+    // Supabase client
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    // UI refs
+    const form = document.getElementById('formConsultaObra');
+    const statusEl = document.getElementById('status');
+    const resultadoEl = document.getElementById('resultado');
+    const btnLimpar = document.getElementById('btnLimpar');
+    const modal = document.getElementById('modal');
+    const modalTexto = document.getElementById('modal-texto');
+    const fecharModalBtn = document.querySelector('.fechar-modal');
+
+    function abrirModal(msg) {
+      modalTexto.textContent = msg;
+      modal.style.display = 'block';
+      modal.setAttribute('aria-hidden', 'false');
+    }
+    function fecharModal() {
+      modal.style.display = 'none';
+      modal.setAttribute('aria-hidden', 'true');
+    }
+    fecharModalBtn.addEventListener('click', fecharModal);
+    window.addEventListener('click', (e) => { if (e.target === modal) fecharModal(); });
+
+    function limparUI() {
+      statusEl.textContent = '';
+      resultadoEl.innerHTML = '';
+    }
+
+    function renderTabela(dados, mapaEmprestimos) {
+      if (!dados || !dados.length) {
+        resultadoEl.innerHTML = '<p>Nenhum registro encontrado.</p>';
+        return;
+      }
+      const linhas = dados.map(r => {
+        const info = mapaEmprestimos.get(r.id) || null;
+        const emprestado = info ? 'Sim' : 'Não';
+        const devolveAte = info ? new Date(info).toLocaleString('pt-BR') : '';
+        return `
+          <tr>
+            <td>${r.titulo ?? ''}</td>
+            <td>${r.autor ?? ''}</td>
+            <td>${r.ano ?? ''}</td>
+            <td>${r.isbn ?? ''}</td>
+            <td>${emprestado}</td>
+            <td>${devolveAte}</td>
+            <td>${new Date(r.created_at).toLocaleString('pt-BR')}</td>
+          </tr>
+        `;
+      }).join('');
+      resultadoEl.innerHTML = `
+        <table>
+          <thead>
+            <tr>
+              <th>Título</th>
+              <th>Autor</th>
+              <th>Ano</th>
+              <th>ISBN</th>
+              <th>Emprestado</th>
+              <th>Devolver até</th>
+              <th>Criado em</th>
+            </tr>
+          </thead>
+          <tbody>${linhas}</tbody>
+        </table>
+      `;
+    }
+
+    // Sanitiza valor para o filtro OR do PostgREST (remove caracteres que quebram a sintaxe)
+    function sanitizeForOrLike(v) {
+      return v.replace(/[*"%]/g, '')   // remove curingas perigosos e aspas
+              .replace(/[(),]/g, ' '); // vírgulas e parênteses podem quebrar a expressão
+    }
+
+    // Consulta (OR com ilike em todos os campos preenchidos) + lookup de empréstimos ativos
+    form.addEventListener('submit', async (ev) => {
+      ev.preventDefault();
+      limparUI();
+
+      const titulo = (document.getElementById('titulo').value || '').trim();
+      const autor  = (document.getElementById('autor').value  || '').trim();
+      const ano    = (document.getElementById('ano').value    || '').trim();
+      const isbn   = (document.getElementById('isbn').value   || '').trim();
+
+      if (!titulo && !autor && !ano && !isbn) {
+        abrirModal('Informe ao menos um campo para consultar.');
+        return;
+      }
+
+      statusEl.textContent = 'Consultando...';
+
+      try {
+        // 1) Obras
+        let query = supabase
+          .from('obras')
+          .select('id,titulo,autor,ano,isbn,created_at', { count: 'exact' })
+          .order('created_at', { ascending: false })
+          .limit(50);
+
+        const parts = [];
+        if (titulo) parts.push(`titulo.ilike.*${sanitizeForOrLike(titulo)}*`);
+        if (autor)  parts.push(`autor.ilike.*${sanitizeForOrLike(autor)}*`);
+        if (ano)    parts.push(`ano.ilike.*${sanitizeForOrLike(ano)}*`);
+        if (isbn)   parts.push(`isbn.ilike.*${sanitizeForOrLike(isbn)}*`);
+        if (parts.length) query = query.or(parts.join(','));
+
+        const { data: obras, error: obrasErr, count } = await query;
+
+        if (obrasErr) {
+          console.error(obrasErr);
+          statusEl.textContent = 'Erro na consulta.';
+          abrirModal('Erro ao consultar obras: ' + obrasErr.message);
+          return;
+        }
+
+        // 2) Para as obras retornadas, consultar empréstimos ATIVOS (data_devolucao IS NULL)
+        const mapaEmprestimos = new Map(); // obra_id -> menor data_prevista_devolucao
+        if (obras && obras.length) {
+          const obraIds = obras.map(o => o.id);
+          const { data: emprestimos, error: empErr } = await supabase
+            .from('emprestimos')
+            .select('obra_id,data_prevista_devolucao,data_devolucao')
+            .in('obra_id', obraIds)
+            .is('data_devolucao', null);
+
+          if (empErr) {
+            console.error(empErr);
+            // Não bloqueia a exibição das obras; só não mostra status de empréstimo
+          } else if (emprestimos && emprestimos.length) {
+            // Se houver mais de um (não deveria, mas por segurança), pega o MAIS PRÓXIMO vencimento
+            for (const e of emprestimos) {
+              const cur = mapaEmprestimos.get(e.obra_id);
+              const due = e.data_prevista_devolucao;
+              if (!cur || new Date(due) < new Date(cur)) {
+                mapaEmprestimos.set(e.obra_id, due);
+              }
+            }
+          }
+        }
+
+        statusEl.textContent = `Encontrados: ${count ?? (obras ? obras.length : 0)}`;
+        renderTabela(obras || [], mapaEmprestimos);
+
+      } catch (e) {
+        console.error(e);
+        statusEl.textContent = 'Falha inesperada.';
+        abrirModal('Falha inesperada ao consultar. Tente novamente.');
+      }
+    });
+
+    // Limpar
+    btnLimpar.addEventListener('click', () => {
+      form.reset();
+      limparUI();
+    });
+  </script>
+</body>
+</html>

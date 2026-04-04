@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <title>Cadastro de alunos</title>
+  <style>
+    /* Mesmo layout da página de consulta */
+    body { font-family: Arial, sans-serif; background:#B5B5B5; margin:20px; text-align:center; }
+    .container { max-width: 860px; margin: 0 auto; background:#fff; padding:20px; border-radius:12px; box-shadow:0 8px 24px rgba(0,0,0,.08); }
+    h2 { margin-top: 0; }
+    form { text-align:left; }
+    .row { display:flex; gap:12px; margin-bottom:12px; align-items:center; }
+    .row label { width:180px; text-align:right; font-weight:bold; }
+    .row input { flex:1; padding:8px; border:1px solid #ddd; border-radius:8px; }
+    .actions { display:flex; gap:12px; justify-content:center; margin-top:16px; }
+    button { padding:10px 16px; border:0; border-radius:8px; cursor:pointer; }
+    .btn-primary { background:#0d6efd; color:#fff; }
+    .btn-secondary { background:#6c757d; color:#fff; }
+    .status { margin-top:16px; font-weight:bold; }
+    /* Modal */
+    .modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,.4); }
+    .modal-conteudo { background:#fff; width:min(520px, 90%); margin:15% auto; padding:20px; border-radius:8px; position:relative; text-align:left; }
+    .fechar-modal { position:absolute; right:14px; top:8px; cursor:pointer; font-size:20px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Cadastro de alunos</h2>
+    <form id="formAluno" novalidate>
+      <div class="row">
+        <label for="nome">Nome:</label>
+        <input type="text" id="nome" name="nome" placeholder="Ex.: Ana Souza" required />
+      </div>
+      <div class="row">
+        <label for="endereco">Endereço:</label>
+        <input type="text" id="endereco" name="endereco" placeholder="Ex.: Rua das Flores, 123" required />
+      </div>
+      <div class="row">
+        <label for="matricula">Matrícula:</label>
+        <input type="text" id="matricula" name="matricula" placeholder="Ex.: 2025A001" required />
+      </div>
+      <div class="row">
+        <label for="codigo_biblioteca">Código da biblioteca:</label>
+        <input type="text" id="codigo_biblioteca" name="codigo_biblioteca" placeholder="Ex.: BIB-0001" required />
+      </div>
+      <div class="actions">
+        <button type="submit" class="btn-primary">Cadastrar</button>
+        <button type="button" id="btnLimpar" class="btn-secondary">Limpar</button>
+      </div>
+    </form>
+    <div id="status" class="status" aria-live="polite"></div>
+  </div>
+
+  <!-- Modal -->
+  <div id="modal" class="modal" aria-hidden="true">
+    <div class="modal-conteudo" role="dialog" aria-modal="true" aria-labelledby="modal-titulo">
+      <span class="fechar-modal" title="Fechar">&times;</span>
+      <h3 id="modal-titulo">Aviso</h3>
+      <p id="modal-texto">Mensagem</p>
+    </div>
+  </div>
+
+  <!-- Acessibilidade (opcional) -->
+  <script src="https://cdn.jsdelivr.net/npm/sienna-accessibility@latest/dist/sienna-accessibility.umd.js" defer></script>
+  <div vw class="enabled">
+    <div vw-access-button class="active"></div>
+    <div vw-plugin-wrapper><div class="vw-plugin-top-wrapper"></div></div>
+  </div>
+  <script src="https://vlibras.gov.br/app/vlibras-plugin.js"></script>
+  <script> new window.VLibras.Widget('https://vlibras.gov.br/app'); </script>
+
+  <!-- Supabase JS -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    const SUPABASE_URL = 'https://wghuaeupfgszfmxdbvsz.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndnaHVhZXVwZmdzemZteGRidnN6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI2NDQxMTIsImV4cCI6MjA3ODIyMDExMn0.UZrPpVK_JlsvTJkXxlXfFOGyAWPKwUaSbMaF1oqkHx0';
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    // UI
+    const form = document.getElementById('formAluno');
+    const statusEl = document.getElementById('status');
+    const btnLimpar = document.getElementById('btnLimpar');
+    const modal = document.getElementById('modal');
+    const modalTexto = document.getElementById('modal-texto');
+    const modalTitulo = document.getElementById('modal-titulo');
+    const fecharModalBtn = document.querySelector('.fechar-modal');
+
+    function abrirModal(titulo, msg){ modalTitulo.textContent=titulo; modalTexto.textContent=msg; modal.style.display='block'; modal.setAttribute('aria-hidden','false'); }
+    function fecharModal(){ modal.style.display='none'; modal.setAttribute('aria-hidden','true'); }
+    fecharModalBtn.addEventListener('click', fecharModal);
+    window.addEventListener('click', (e)=>{ if(e.target===modal) fecharModal(); });
+
+    function limparUI(){ statusEl.textContent=''; }
+
+    form.addEventListener('submit', async (ev) => {
+      ev.preventDefault();
+      limparUI();
+
+      if(!form.reportValidity()) return;
+
+      const nome  = (document.getElementById('nome').value||'').trim();
+      const endereco = (document.getElementById('endereco').value||'').trim();
+      const matricula = (document.getElementById('matricula').value||'').trim();
+      const codigo_biblioteca = (document.getElementById('codigo_biblioteca').value||'').trim();
+
+      if(!nome || !endereco || !matricula || !codigo_biblioteca){
+        abrirModal('Campos obrigatórios','Preencha todos os campos.');
+        return;
+      }
+
+      statusEl.textContent = 'Salvando...';
+
+      try {
+        // (Opcional) checar duplicidade por matrícula OU código da biblioteca
+        const { data: dup, error: dupErr } = await supabase
+          .from('alunos')
+          .select('id,nome,matricula,codigo_biblioteca,created_at')
+          .or(`matricula.eq.${matricula},codigo_biblioteca.eq.${codigo_biblioteca}`)
+          .limit(1);
+
+        if (dupErr) {
+          console.error(dupErr);
+          statusEl.textContent = '';
+          abrirModal('Erro na verificação', 'Não foi possível checar duplicidade.');
+          return;
+        }
+
+        if (dup && dup.length) {
+          const r = dup[0];
+          statusEl.textContent = '';
+          abrirModal('Registro já existe',
+            `Já há um aluno com esta matrícula ou código de biblioteca.\n\n` +
+            `Nome: ${r.nome || ''}\n` +
+            `Matrícula: ${r.matricula || ''}\n` +
+            `Código biblioteca: ${r.codigo_biblioteca || ''}\n` +
+            `Cadastrado em: ${new Date(r.created_at).toLocaleString('pt-BR')}`);
+          return;
+        }
+
+        // INSERT
+        const { error } = await supabase
+          .from('alunos')
+          .insert([{ nome, endereco, matricula, codigo_biblioteca }]);
+
+        if (error) {
+          // trata conflito se UNIQUE estiver habilitado no banco
+          if (error.code === '23505' || /duplicate key value/i.test(error.message || '')) {
+            statusEl.textContent = '';
+            abrirModal('Registro duplicado', 'Matrícula ou código da biblioteca já cadastrado.');
+            return;
+          }
+          console.error(error);
+          statusEl.textContent = '';
+          abrirModal('Erro ao cadastrar', 'Não foi possível salvar. ' + (error.message || ''));
+          return;
+        }
+
+        form.reset();
+        statusEl.textContent = '';
+        abrirModal('Sucesso', 'Aluno cadastrado com sucesso! ✅');
+
+      } catch (e) {
+        console.error(e);
+        statusEl.textContent = '';
+        abrirModal('Erro inesperado', 'Tente novamente mais tarde.');
+      }
+    });
+
+    btnLimpar.addEventListener('click', ()=>{ form.reset(); limparUI(); });
+  </script>
+</body>
+</html>

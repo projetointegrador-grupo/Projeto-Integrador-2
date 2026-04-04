@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <title>Catalogar obra</title>
+  <style>
+    /* === Mesmo layout da página de consulta === */
+    body { font-family: Arial, sans-serif; background:#B5B5B5; margin:20px; text-align:center; }
+    .container { max-width: 860px; margin: 0 auto; background:#fff; padding:20px; border-radius:12px; box-shadow:0 8px 24px rgba(0,0,0,.08); }
+    h2 { margin-top: 0; }
+    form { text-align:left; }
+    .row { display:flex; gap:12px; margin-bottom:12px; align-items:center; }
+    .row label { width:180px; text-align:right; font-weight:bold; }
+    .row input { flex:1; padding:8px; border:1px solid #ddd; border-radius:8px; }
+    .hint { font-size:12px; color:#555; margin-top:6px; text-align:left; }
+    .actions { display:flex; gap:12px; justify-content:center; margin-top:16px; }
+    button { padding:10px 16px; border:0; border-radius:8px; cursor:pointer; }
+    .btn-primary { background:#0d6efd; color:#fff; }
+    .btn-secondary { background:#6c757d; color:#fff; }
+    .status { margin-top:16px; font-weight:bold; }
+
+    /* Modal igual ao padrão usado */
+    .modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,.4); }
+    .modal-conteudo { background:#fff; width:min(520px, 90%); margin:15% auto; padding:20px; border-radius:8px; position:relative; text-align:left; }
+    .fechar-modal { position:absolute; right:14px; top:8px; cursor:pointer; font-size:20px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Catalogar obra</h2>
+    <form id="formularioobra" novalidate>
+      <div class="row">
+        <label for="titulo">Título da obra:</label>
+        <input type="text" id="titulo" name="titulo" placeholder="Ex.: Dom Casmurro" required />
+      </div>
+      <div class="row">
+        <label for="autor">Nome do autor:</label>
+        <input type="text" id="autor" name="autor" placeholder="Ex.: Machado de Assis" required />
+      </div>
+      <div class="row">
+        <label for="ano">Ano de publicação:</label>
+        <input type="text" id="ano" name="ano" placeholder="Ex.: 1899" required />
+      </div>
+      <div class="row">
+        <label for="isbn">ISBN:</label>
+        <input type="text" id="isbn" name="isbn" placeholder="Ex.: 9781234567897" required />
+      </div>
+      <p class="hint"><strong>Todos os campos são obrigatórios</strong>. O ISBN não pode se repetir.</p>
+      <div class="actions">
+        <button type="submit" class="btn-primary">Catalogar</button>
+        <button type="button" id="btnLimpar" class="btn-secondary">Limpar</button>
+      </div>
+    </form>
+
+    <div id="status" class="status" aria-live="polite"></div>
+  </div>
+
+  <!-- Modal -->
+  <div id="modal" class="modal" aria-hidden="true">
+    <div class="modal-conteudo" role="dialog" aria-modal="true" aria-labelledby="modal-titulo">
+      <span class="fechar-modal" title="Fechar">&times;</span>
+      <h3 id="modal-titulo">Aviso</h3>
+      <p id="modal-texto">Mensagem</p>
+    </div>
+  </div>
+
+  <!-- Acessibilidade (opcional) -->
+  <script src="https://cdn.jsdelivr.net/npm/sienna-accessibility@latest/dist/sienna-accessibility.umd.js" defer></script>
+  <div vw class="enabled">
+    <div vw-access-button class="active"></div>
+    <div vw-plugin-wrapper><div class="vw-plugin-top-wrapper"></div></div>
+  </div>
+  <script src="https://vlibras.gov.br/app/vlibras-plugin.js"></script>
+  <script> new window.VLibras.Widget('https://vlibras.gov.br/app'); </script>
+
+  <!-- Supabase JS -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    const SUPABASE_URL = 'https://wghuaeupfgszfmxdbvsz.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndnaHVhZXVwZmdzemZteGRidnN6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI2NDQxMTIsImV4cCI6MjA3ODIyMDExMn0.UZrPpVK_JlsvTJkXxlXfFOGyAWPKwUaSbMaF1oqkHx0';
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    // UI refs
+    const form = document.getElementById('formularioobra');
+    const statusEl = document.getElementById('status');
+    const btnLimpar = document.getElementById('btnLimpar');
+    const modal = document.getElementById('modal');
+    const modalTexto = document.getElementById('modal-texto');
+    const modalTitulo = document.getElementById('modal-titulo');
+    const fecharModalBtn = document.querySelector('.fechar-modal');
+
+    function abrirModal(titulo, msg){ modalTitulo.textContent = titulo; modalTexto.textContent = msg; modal.style.display='block'; modal.setAttribute('aria-hidden','false'); }
+    function fecharModal(){ modal.style.display='none'; modal.setAttribute('aria-hidden','true'); }
+    fecharModalBtn.addEventListener('click', fecharModal);
+    window.addEventListener('click', (e)=>{ if(e.target===modal) fecharModal(); });
+
+    function limparUI(){ statusEl.textContent=''; }
+
+    function normalizarIsbn(v){ return (v||'').toUpperCase().replace(/[^0-9X]/g,''); }
+
+    form.addEventListener('submit', async (ev) => {
+      ev.preventDefault();
+      limparUI();
+
+      // validação nativa
+      if(!form.reportValidity()) return;
+
+      const titulo = (document.getElementById('titulo').value||'').trim();
+      const autor  = (document.getElementById('autor').value||'').trim();
+      const ano    = (document.getElementById('ano').value||'').trim();
+      const isbnIn = (document.getElementById('isbn').value||'').trim();
+
+      if(!titulo || !autor || !ano || !isbnIn){
+        abrirModal('Campos obrigatórios','Preencha todos os campos.');
+        return;
+      }
+
+      const isbn = normalizarIsbn(isbnIn); // salvamos normalizado
+      statusEl.textContent = 'Salvando...';
+
+      try {
+        // 1) checa duplicidade (pelo ISBN normalizado)
+        let query = supabase.from('obras').select('id,titulo,autor,ano,isbn,created_at').eq('isbn', isbn).limit(1);
+        const { data: dup, error: selError } = await query;
+        if(selError){
+          console.error(selError);
+          statusEl.textContent = '';
+          abrirModal('Erro na verificação','Não foi possível verificar duplicidade.');
+          return;
+        }
+        if(dup && dup.length){
+          const r = dup[0];
+          statusEl.textContent = '';
+          abrirModal('ISBN já cadastrado', `Este ISBN já existe na base.\n\nTítulo: ${r.titulo||''}\nAutor: ${r.autor||''}\nAno: ${r.ano||''}\nCadastrado em: ${new Date(r.created_at).toLocaleString('pt-BR')}`);
+          return;
+        }
+
+        // 2) insere
+        const { error } = await supabase.from('obras').insert([{ titulo, autor, ano, isbn }]);
+        if(error){
+          // trata race condition se houver UNIQUE no banco
+          if(error.code==='23505' || /duplicate key value/i.test(error.message||'')){
+            statusEl.textContent = '';
+            abrirModal('ISBN já cadastrado','Outro usuário acabou de cadastrar este ISBN.');
+            return;
+          }
+          console.error(error);
+          statusEl.textContent = '';
+          abrirModal('Erro ao catalogar','Não foi possível salvar. '+(error.message||''));
+          return;
+        }
+
+        form.reset();
+        statusEl.textContent = '';
+        abrirModal('Sucesso','Catalogação realizada! ✅');
+      } catch (e) {
+        console.error(e);
+        statusEl.textContent='';
+        abrirModal('Erro inesperado','Tente novamente.');
+      }
+    });
+
+    btnLimpar.addEventListener('click', ()=>{ form.reset(); limparUI(); });
+  </script>
+</body>
+</html>

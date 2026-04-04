@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <title>Registro de empréstimo</title>
+  <style>
+    /* Mesmo layout dos formulários anteriores */
+    body { font-family: Arial, sans-serif; background:#B5B5B5; margin:20px; text-align:center; }
+    .container { max-width: 860px; margin: 0 auto; background:#fff; padding:20px; border-radius:12px; box-shadow:0 8px 24px rgba(0,0,0,.08); }
+    h2 { margin-top: 0; }
+    form { text-align:left; }
+    .row { display:flex; gap:12px; margin-bottom:12px; align-items:center; }
+    .row label { width:220px; text-align:right; font-weight:bold; }
+    .row input { flex:1; padding:8px; border:1px solid #ddd; border-radius:8px; }
+    .actions { display:flex; gap:12px; justify-content:center; margin-top:16px; }
+    button { padding:10px 16px; border:0; border-radius:8px; cursor:pointer; }
+    .btn-primary { background:#0d6efd; color:#fff; }
+    .btn-secondary { background:#6c757d; color:#fff; }
+    .status { margin-top:16px; font-weight:bold; text-align:center; }
+    .hint { font-size:12px; color:#555; margin-top:6px; text-align:left; }
+
+    /* Modal */
+    .modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,.4); }
+    .modal-conteudo { background:#fff; width:min(520px, 90%); margin:15% auto; padding:20px; border-radius:8px; position:relative; text-align:left; }
+    .fechar-modal { position:absolute; right:14px; top:8px; cursor:pointer; font-size:20px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Registro de empréstimo</h2>
+    <form id="formEmprestimo" novalidate>
+      <!-- Obra -->
+      <div class="row">
+        <label for="isbn">ISBN (obrigatório):</label>
+        <input type="text" id="isbn" name="isbn" placeholder="Ex.: 9781234567897" required />
+      </div>
+      <div class="row">
+        <label for="titulo">Título da obra:</label>
+        <input type="text" id="titulo" name="titulo" placeholder="(auto)" readonly />
+      </div>
+      <div class="row">
+        <label for="autor">Autor:</label>
+        <input type="text" id="autor" name="autor" placeholder="(auto)" readonly />
+      </div>
+      <div class="row">
+        <label for="ano">Ano:</label>
+        <input type="text" id="ano" name="ano" placeholder="(auto)" readonly />
+      </div>
+
+      <!-- Aluno -->
+      <div class="row">
+        <label for="codigo_biblioteca">Código da biblioteca (obrigatório):</label>
+        <input type="text" id="codigo_biblioteca" name="codigo_biblioteca" placeholder="Ex.: BIB-0001" required />
+      </div>
+      <div class="row">
+        <label for="nome_aluno">Nome do aluno:</label>
+        <input type="text" id="nome_aluno" name="nome_aluno" placeholder="(auto)" readonly />
+      </div>
+      <div class="row">
+        <label for="matricula">Matrícula:</label>
+        <input type="text" id="matricula" name="matricula" placeholder="(auto)" readonly />
+      </div>
+
+      <!-- Datas -->
+      <div class="row">
+        <label for="data_emprestimo">Data do empréstimo:</label>
+        <input type="text" id="data_emprestimo" name="data_emprestimo" placeholder="(auto)" readonly />
+      </div>
+      <div class="row">
+        <label for="data_prevista">Data prevista de devolução (15 dias úteis):</label>
+        <input type="text" id="data_prevista" name="data_prevista" placeholder="(auto)" readonly />
+      </div>
+
+      <p class="hint">Preencha o <strong>ISBN</strong> para carregar a obra e o <strong>código da biblioteca</strong> para carregar o aluno. Cada aluno pode ter no máximo <strong>3</strong> empréstimos ativos.</p>
+      <div class="actions">
+        <button type="submit" class="btn-primary">Emprestar</button>
+        <button type="button" id="btnLimpar" class="btn-secondary">Limpar</button>
+      </div>
+    </form>
+
+    <div id="status" class="status" aria-live="polite"></div>
+  </div>
+
+  <!-- Modal -->
+  <div id="modal" class="modal" aria-hidden="true">
+    <div class="modal-conteudo" role="dialog" aria-modal="true" aria-labelledby="modal-titulo">
+      <span class="fechar-modal" title="Fechar">&times;</span>
+      <h3 id="modal-titulo">Aviso</h3>
+      <p id="modal-texto">Mensagem</p>
+    </div>
+  </div>
+
+  <!-- Acessibilidade (opcional) -->
+  <script src="https://cdn.jsdelivr.net/npm/sienna-accessibility@latest/dist/sienna-accessibility.umd.js" defer></script>
+  <div vw class="enabled"><div vw-access-button class="active"></div><div vw-plugin-wrapper><div class="vw-plugin-top-wrapper"></div></div></div>
+  <script src="https://vlibras.gov.br/app/vlibras-plugin.js"></script>
+  <script> new window.VLibras.Widget('https://vlibras.gov.br/app'); </script>
+
+  <!-- Supabase JS -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    const SUPABASE_URL = 'https://wghuaeupfgszfmxdbvsz.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndnaHVhZXVwZmdzemZteGRidnN6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI2NDQxMTIsImV4cCI6MjA3ODIyMDExMn0.UZrPpVK_JlsvTJkXxlXfFOGyAWPKwUaSbMaF1oqkHx0';
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    // UI refs
+    const form = document.getElementById('formEmprestimo');
+    const statusEl = document.getElementById('status');
+    const btnLimpar = document.getElementById('btnLimpar');
+    const modal = document.getElementById('modal');
+    const modalTexto = document.getElementById('modal-texto');
+    const modalTitulo = document.getElementById('modal-titulo');
+    const fecharModalBtn = document.querySelector('.fechar-modal');
+
+    // Campos
+    const isbnEl = document.getElementById('isbn');
+    const tituloEl = document.getElementById('titulo');
+    const autorEl = document.getElementById('autor');
+    const anoEl = document.getElementById('ano');
+
+    const codBibEl = document.getElementById('codigo_biblioteca');
+    const nomeAlunoEl = document.getElementById('nome_aluno');
+    const matriculaEl = document.getElementById('matricula');
+
+    const dataEmpEl = document.getElementById('data_emprestimo');
+    const dataPrevEl = document.getElementById('data_prevista');
+
+    // Hidden IDs (em memória)
+    let obraId = null;
+    let alunoId = null;
+
+    function abrirModal(titulo, msg){ modalTitulo.textContent=titulo; modalTexto.textContent=msg; modal.style.display='block'; modal.setAttribute('aria-hidden','false'); }
+    function fecharModal(){ modal.style.display='none'; modal.setAttribute('aria-hidden','true'); }
+    fecharModalBtn.addEventListener('click', fecharModal);
+    window.addEventListener('click', (e)=>{ if(e.target===modal) fecharModal(); });
+
+    function limparUI(){ statusEl.textContent=''; }
+
+    function normalizeIsbn(v){ return (v||'').toUpperCase().replace(/[^0-9X]/g,''); }
+
+    function addBusinessDays(date, days){
+      const d = new Date(date.getTime());
+      let added = 0;
+      while(added < days){
+        d.setDate(d.getDate() + 1);
+        const dow = d.getDay(); // 0=Dom,6=Sáb
+        if(dow !== 0 && dow !== 6){
+          added++;
+        }
+      }
+      return d;
+    }
+
+    function setDatesNow(){
+      const now = new Date();
+      const due = addBusinessDays(now, 15);
+      dataEmpEl.value = now.toLocaleString('pt-BR');
+      dataPrevEl.value = due.toLocaleString('pt-BR');
+    }
+
+    async function carregarObraPorIsbn(){
+      const raw = isbnEl.value.trim();
+      if(!raw) { obraId=null; tituloEl.value=autorEl.value=anoEl.value=''; return; }
+      const isbn = normalizeIsbn(raw);
+      statusEl.textContent = 'Carregando obra...';
+      const { data, error } = await supabase
+        .from('obras')
+        .select('id,titulo,autor,ano,isbn')
+        .eq('isbn', isbn)
+        .limit(1);
+      if(error){ statusEl.textContent=''; abrirModal('Erro','Falha ao consultar obra.'); return; }
+      if(!data || !data.length){ statusEl.textContent=''; abrirModal('Não encontrada','Nenhuma obra com este ISBN.'); obraId=null; tituloEl.value=autorEl.value=anoEl.value=''; return; }
+      const r = data[0];
+      obraId = r.id; tituloEl.value = r.titulo || ''; autorEl.value = r.autor || ''; anoEl.value = r.ano || '';
+      statusEl.textContent = '';
+    }
+
+    async function carregarAlunoPorCodigo(){
+      const code = codBibEl.value.trim();
+      if(!code){ alunoId=null; nomeAlunoEl.value=matriculaEl.value=''; return; }
+      statusEl.textContent = 'Carregando aluno...';
+      const { data, error } = await supabase
+        .from('alunos')
+        .select('id,nome,matricula,codigo_biblioteca')
+        .eq('codigo_biblioteca', code)
+        .limit(1);
+      if(error){ statusEl.textContent=''; abrirModal('Erro','Falha ao consultar aluno.'); return; }
+      if(!data || !data.length){ statusEl.textContent=''; abrirModal('Não encontrado','Nenhum aluno com este código de biblioteca.'); alunoId=null; nomeAlunoEl.value=matriculaEl.value=''; return; }
+      const r = data[0];
+      alunoId = r.id; nomeAlunoEl.value = r.nome || ''; matriculaEl.value = r.matricula || '';
+      statusEl.textContent = '';
+    }
+
+    async function contarEmprestimosAtivosDoAluno(alunoId){
+      const { count, error } = await supabase
+        .from('emprestimos')
+        .select('id', { count: 'exact', head: true })
+        .eq('aluno_id', alunoId)
+        .is('data_devolucao', null);
+      if(error) throw error;
+      return count || 0;
+    }
+
+    form.addEventListener('submit', async (ev) => {
+      ev.preventDefault();
+      limparUI();
+
+      if(!form.reportValidity()) return;
+
+      // Garante que datas estejam atualizadas
+      setDatesNow();
+
+      const isbnRaw = isbnEl.value.trim();
+      const codBib = codBibEl.value.trim();
+      if(!isbnRaw || !codBib){ abrirModal('Campos obrigatórios','Preencha ISBN e Código da biblioteca.'); return; }
+
+      if(!obraId){ await carregarObraPorIsbn(); }
+      if(!alunoId){ await carregarAlunoPorCodigo(); }
+      if(!obraId || !alunoId){ return; }
+
+      try {
+        // Regra: no máximo 3 empréstimos ativos por aluno
+        const ativos = await contarEmprestimosAtivosDoAluno(alunoId);
+        if(ativos >= 3){ abrirModal('Limite atingido','Este aluno já possui 3 empréstimos ativos.'); return; }
+
+        const now = new Date();
+        const due = addBusinessDays(now, 15);
+        const payload = {
+          aluno_id: alunoId,
+          obra_id: obraId,
+          isbn: normalizeIsbn(isbnRaw),
+          codigo_biblioteca: codBib,
+          data_emprestimo: now.toISOString(),
+          data_prevista_devolucao: due.toISOString(),
+          status: 'ATIVO'
+        };
+
+        const { error } = await supabase.from('emprestimos').insert([payload]);
+        if(error){
+          // trate UNIQUE parcial (mesma obra ativa para o mesmo aluno)
+          if(error.code==='23505' || /duplicate key value/i.test(error.message||'')){
+            abrirModal('Já existe','Este aluno já possui esta obra emprestada e ainda não devolveu.');
+            return;
+          }
+          abrirModal('Erro ao emprestar', 'Não foi possível registrar. '+(error.message||''));
+          return;
+        }
+
+        abrirModal('Sucesso', `Empréstimo registrado!\nDevolver até: ${due.toLocaleString('pt-BR')}`);
+        form.reset();
+        obraId=null; alunoId=null; setDatesNow();
+      } catch (e) {
+        console.error(e);
+        abrirModal('Erro inesperado','Tente novamente.');
+      }
+    });
+
+    btnLimpar.addEventListener('click', ()=>{ form.reset(); obraId=null; alunoId=null; limparUI(); setDatesNow(); });
+
+    // Auto-preenchimento ao sair do campo
+    isbnEl.addEventListener('change', carregarObraPorIsbn);
+    isbnEl.addEventListener('blur', carregarObraPorIsbn);
+    codBibEl.addEventListener('change', carregarAlunoPorCodigo);
+    codBibEl.addEventListener('blur', carregarAlunoPorCodigo);
+
+    // inicializa datas
+    setDatesNow();
+  </script>
+</body>
+</html>
